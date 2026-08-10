@@ -87,6 +87,16 @@ class TicketModal(Modal):
             guild.me: discord.PermissionOverwrite(read_messages=True, view_channel=True, send_messages=True, manage_channels=True)
         }
 
+        config = await db_manager.get_panel_embed_data(str(guild.id))
+        admin_role_ids = config.get("admin_role_ids", [])
+        for role_id in admin_role_ids:
+            try:
+                role = guild.get_role(int(role_id))
+                if role:
+                    overwrites[role] = discord.PermissionOverwrite(read_messages=True, view_channel=True, send_messages=True)
+            except ValueError:
+                pass
+
         category_name = "Тикеты поддержки"
         ticket_category_obj = discord.utils.get(guild.categories, name=category_name)
         if not ticket_category_obj:

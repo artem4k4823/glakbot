@@ -140,6 +140,19 @@ async def tickets_page(
     )
 
 
+import aiohttp
+
+async def get_guild_roles(guild_id: str, bot_token: str) -> list:
+    url = f"https://discord.com/api/v10/guilds/{guild_id}/roles"
+    headers = {"Authorization": f"Bot {bot_token}"}
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as resp:
+            if resp.status == 200:
+                roles = await resp.json()
+                # Отфильтруем @everyone (у которого id совпадает с guild_id)
+                return [r for r in roles if r.get("id") != guild_id]
+            return []
+
 @router.get("/server/{guild_id}/settings", response_class=HTMLResponse)
 async def settings_page(
     guild_id: str,
@@ -152,6 +165,7 @@ async def settings_page(
         
     service = get_ticket_service(guild_id, db)
     config = await service.get_panel_config()
+    roles = await get_guild_roles(guild_id, settings.BOT_TOKEN)
     
     return templates.TemplateResponse(
         request=request,
@@ -161,7 +175,8 @@ async def settings_page(
             "active_page": "settings",
             "user": user,
             "guild_id": guild_id,
-            "config": config
+            "config": config,
+            "roles": roles
         }
     )
 

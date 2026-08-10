@@ -102,6 +102,13 @@ async function handleSaveSettings(event) {
     const color = document.getElementById('panelColor').value;
     const banner_url = document.getElementById('panelBanner').value;
     const footer_text = document.getElementById('panelFooter').value;
+    
+    // Сбор значений из чекбоксов
+    let admin_role_ids = [];
+    const checkboxes = document.querySelectorAll('input[name="admin_role_ids"]:checked');
+    checkboxes.forEach((cb) => {
+        admin_role_ids.push(cb.value);
+    });
 
     try {
         const guildId = window.location.pathname.split('/')[2];
@@ -110,7 +117,7 @@ async function handleSaveSettings(event) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ title, description, color, banner_url, footer_text })
+            body: JSON.stringify({ title, description, color, banner_url, footer_text, admin_role_ids })
         });
 
         if (response.ok) {

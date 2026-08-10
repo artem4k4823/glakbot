@@ -54,6 +54,7 @@ class PanelConfigModel(Base):
     color: Mapped[str] = mapped_column(String(20), default="#5865F2")
     banner_url: Mapped[Optional[str]] = mapped_column(String(255))
     footer_text: Mapped[str] = mapped_column(String(100), default="Служба поддержки")
+    admin_role_ids: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
 
 class UserModel(Base):
     __tablename__ = "users"
@@ -114,7 +115,8 @@ class TicketDashboardManager:
                     "description": config.description,
                     "color": config.color,
                     "banner_url": config.banner_url,
-                    "footer_text": config.footer_text
+                    "footer_text": config.footer_text,
+                    "admin_role_ids": config.admin_role_ids.split(",") if config.admin_role_ids else []
                 }
             
             return {

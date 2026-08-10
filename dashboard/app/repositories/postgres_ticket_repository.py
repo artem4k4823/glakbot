@@ -138,6 +138,7 @@ class PostgresTicketRepository:
         config.color = config_in.color
         config.banner_url = config_in.banner_url
         config.footer_text = config_in.footer_text
+        config.admin_role_ids = ",".join(config_in.admin_role_ids) if config_in.admin_role_ids else None
         
         await self.db.commit()
         await self.db.refresh(config)

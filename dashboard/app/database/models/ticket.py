@@ -50,3 +50,4 @@ class PanelConfigModel(Base):
     color: Mapped[str] = mapped_column(String(20), default="#5865F2")
     banner_url: Mapped[str] = mapped_column(String(500), default="https://images.unsplash.com/photo-1534536281715-e28d76689b4d?w=1200&q=80")
     footer_text: Mapped[str] = mapped_column(String(255), default="Служба поддержки • Нажмите на кнопку ниже, чтобы начать")
+    admin_role_ids: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)

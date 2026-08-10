@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 from datetime import datetime
 
@@ -50,6 +50,14 @@ class PanelConfigSchema(BaseModel):
     color: str = "#5865F2"
     banner_url: str = "https://images.unsplash.com/photo-1534536281715-e28d76689b4d?w=1200&q=80"
     footer_text: str = "Служба поддержки • Нажмите на кнопку ниже, чтобы начать"
+    admin_role_ids: List[str] = []
+
+    @field_validator("admin_role_ids", mode="before")
+    @classmethod
+    def parse_admin_roles(cls, v):
+        if isinstance(v, str):
+            return [x.strip() for x in v.split(",") if x.strip()]
+        return v or []
 
     class Config:
         from_attributes = True
