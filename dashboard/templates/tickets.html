@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+  <h2 style="font-size: 1.25rem; font-weight: 600;">Список всех обращений</h2>
+  <div style="display: flex; gap: 0.5rem;">
+    <a href="/server/{{ guild_id }}/tickets" class="btn {% if current_status == 'all' %}btn-primary{% else %}btn-secondary{% endif %}"
+      style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: rgba(255,255,255,0.05);">Все</a>
+    <a href="/server/{{ guild_id }}/tickets?status=open"
+      class="btn {% if current_status == 'open' %}btn-primary{% else %}btn-secondary{% endif %}"
+      style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: rgba(255,255,255,0.05);">Открытые</a>
+    <a href="/server/{{ guild_id }}/tickets?status=closed"
+      class="btn {% if current_status == 'closed' %}btn-primary{% else %}btn-secondary{% endif %}"
+      style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: rgba(255,255,255,0.05);">Закрытые</a>
+  </div>
+</div>
+
+<div class="table-container">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Пользователь</th>
+        <th>Категория</th>
+        <th>Тема</th>
+        <th>Описание</th>
+        <th>Статус</th>
+        <th>Дата</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if tickets %}
+      {% for ticket in tickets %}
+      <tr>
+        <td><strong>{{ ticket.id }}</strong></td>
+        <td>
+          <div>{{ ticket.user_name }}</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">ID: {{ ticket.user_id }}</div>
+        </td>
+        <td><span class="badge" style="background: rgba(255,255,255,0.05); color: #cbd5e1;">{{ ticket.category }}</span>
+        </td>
+        <td><strong>{{ ticket.subject }}</strong></td>
+        <td
+          style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-muted);">
+          {{ ticket.description }}
+        </td>
+        <td>
+          {% if ticket.status == 'open' %}
+          <span class="badge badge-open">Открыт</span>
+          {% else %}
+          <span class="badge badge-closed">Закрыт</span>
+          {% endif %}
+        </td>
+        <td>{{ ticket.created_at[:16].replace('T', ' ') }}</td>
+      </tr>
+      {% endfor %}
+      {% else %}
+      <tr>
+        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">Тикеты не найдены</td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

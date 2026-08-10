@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 680px;">
+  <div class="card" style="margin-bottom: 2rem;">
+    <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem;">Настройки карточки тикета</h2>
+
+    <form onsubmit="handleSaveSettings(event)">
+      <div class="form-group">
+        <label class="form-label">Заголовок Embed карточки</label>
+        <input type="text" id="panelTitle" class="form-control" value="{{ config.title }}" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Описание на панели</label>
+        <textarea id="panelDesc" class="form-control" rows="4" required>{{ config.description }}</textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Цвет карточки (HEX)</label>
+        <input type="color" id="panelColor" class="form-control" value="{{ config.color }}" style="height: 45px; padding: 0.2rem 0.5rem; cursor: pointer;">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">URL баннера (изображение)</label>
+        <input type="url" id="panelBanner" class="form-control" value="{{ config.banner_url }}">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Текст в футере</label>
+        <input type="text" id="panelFooter" class="form-control" value="{{ config.footer_text }}">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 2rem;">
+        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

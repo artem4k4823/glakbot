@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Выберите сервер - SnapHelp</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      padding: 3rem;
+      flex-direction: column;
+    }
+    .header {
+      margin-bottom: 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 1000px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .servers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+      max-width: 1000px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .server-card {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+    .server-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      overflow: hidden;
+    }
+    .server-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .server-info h3 {
+      margin-bottom: 0.25rem;
+    }
+    .server-info p {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="header">
+    <div>
+      <h1 class="header-title">Ваши серверы</h1>
+      <p class="header-sub">Выберите сервер для настройки SnapHelp</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <i class="fa-brands fa-discord" style="font-size: 1.5rem; color: var(--primary);"></i>
+        <span>{{ user.username }}</span>
+      </div>
+      <a href="/auth/logout" class="btn" style="background: rgba(255,255,255,0.1); color: white;">Выход</a>
+    </div>
+  </div>
+
+  <div class="servers-grid">
+    {% for guild in guilds %}
+    {% if guild.bot_joined %}
+    <a href="/server/{{ guild.id }}" class="card server-card">
+      <div class="server-icon">
+        {% if guild.icon %}
+        <img src="https://cdn.discordapp.com/icons/{{ guild.id }}/{{ guild.icon }}.png" alt="{{ guild.name }}">
+        {% else %}
+        {{ guild.name[0] }}
+        {% endif %}
+      </div>
+      <div class="server-info">
+        <h3>{{ guild.name }}</h3>
+        <p>Настроить бота <i class="fa-solid fa-arrow-right" style="margin-left: 5px;"></i></p>
+      </div>
+    </a>
+    {% else %}
+    <a href="https://discord.com/oauth2/authorize?client_id={{ client_id }}&permissions=8&integration_type=0&scope=bot+applications.commands" class="card server-card" target="_blank">
+      <div class="server-icon" style="filter: grayscale(100%); opacity: 0.7;">
+        {% if guild.icon %}
+        <img src="https://cdn.discordapp.com/icons/{{ guild.id }}/{{ guild.icon }}.png" alt="{{ guild.name }}">
+        {% else %}
+        {{ guild.name[0] }}
+        {% endif %}
+      </div>
+      <div class="server-info">
+        <h3>{{ guild.name }}</h3>
+        <p style="color: var(--warning);">Пригласить бота <i class="fa-solid fa-plus" style="margin-left: 5px;"></i></p>
+      </div>
+    </a>
+    {% endif %}
+    {% else %}
+    <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+      <i class="fa-solid fa-server" style="font-size: 3rem; color: var(--text-secondary); margin-bottom: 1rem;"></i>
+      <h3>Нет доступных серверов</h3>
+      <p style="color: var(--text-secondary);">У вас нет прав администратора ни на одном сервере, или произошла ошибка.</p>
+    </div>
+    {% endfor %}
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title }} - SnapHelp Dashboard</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <i class="fa-solid fa-ticket-simple" style="color: #6366f1;"></i>
+      <span>SnapHelp Panel</span>
+    </div>
+
+    <ul class="nav-list">
+      <li>
+        <a href="/server/{{ guild_id }}" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Главная</span>
+        </a>
+      </li>
+      <li>
+        <a href="/server/{{ guild_id }}/categories" class="nav-link {% if active_page == 'categories' %}active{% endif %}">
+          <i class="fa-solid fa-layer-group"></i>
+          <span>Категории</span>
+        </a>
+      </li>
+      <li>
+        <a href="/server/{{ guild_id }}/tickets" class="nav-link {% if active_page == 'tickets' %}active{% endif %}">
+          <i class="fa-solid fa-ticket"></i>
+          <span>Тикеты</span>
+        </a>
+      </li>
+      <li>
+        <a href="/server/{{ guild_id }}/settings" class="nav-link {% if active_page == 'settings' %}active{% endif %}">
+          <i class="fa-solid fa-sliders"></i>
+          <span>Настройки</span>
+        </a>
+      </li>
+      <li style="margin-top: auto;">
+        <a href="/" class="nav-link">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>К списку серверов</span>
+        </a>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+    <header class="header">
+      <div>
+        <h1 class="header-title">{{ page_title }}</h1>
+        <p class="header-sub">Панель управления тикет-системой Discord бота</p>
+      </div>
+      <div>
+        <span class="badge badge-open">
+          <i class="fa-solid fa-circle" style="font-size: 8px;"></i> Бот активен
+        </span>
+      </div>
+    </header>
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

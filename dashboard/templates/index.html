@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Вход - SnapHelp</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .login-box {
+      text-align: center;
+      padding: 3rem;
+      max-width: 400px;
+      width: 100%;
+    }
+    .login-logo {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+  <div class="card login-box">
+    <div class="login-logo">
+      <i class="fa-solid fa-ticket-simple"></i>
+    </div>
+    <h2>SnapHelp Panel</h2>
+    <p style="color: var(--text-secondary); margin-bottom: 2rem; margin-top: 0.5rem;">
+      Управление тикет-системой
+    </p>
+    <a href="/auth/login" class="btn btn-primary" style="width: 100%;">
+      <i class="fa-brands fa-discord"></i> Войти через Discord
+    </a>
+  </div>
+</body>
+</html>

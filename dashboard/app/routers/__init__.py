@@ -1,0 +1,3 @@
+from app.routers.web_router import router as web_router
+
+__all__ = ["web_router"]

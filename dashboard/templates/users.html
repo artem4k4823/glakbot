@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+  <h2 style="font-size: 1.25rem; font-weight: 600;">Зарегистрированные пользователи и настройки</h2>
+  <button class="btn btn-primary" onclick="openModal('addUserModal')">
+    <i class="fa-solid fa-user-plus"></i> Зарегистрировать пользователя
+  </button>
+</div>
+
+<div class="table-container">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Пользователь</th>
+        <th>Discord ID</th>
+        <th>Роль</th>
+        <th>Тема</th>
+        <th>Язык</th>
+        <th>Уведомления</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if users %}
+        {% for user in users %}
+        <tr>
+          <td><strong>#{{ user.id }}</strong></td>
+          <td>
+            <div><strong>{{ user.username }}</strong></div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ user.email or 'без email' }}</div>
+          </td>
+          <td><code>{{ user.discord_id }}</code></td>
+          <td>
+            {% if user.is_admin %}
+              <span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3);">Администратор</span>
+            {% else %}
+              <span class="badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">Пользователь</span>
+            {% endif %}
+          </td>
+          <td><span class="badge" style="background: rgba(255,255,255,0.05); color: #cbd5e1;">{{ user.settings.theme if user.settings else 'dark' }}</span></td>
+          <td><code>{{ user.settings.language if user.settings else 'ru' }}</code></td>
+          <td>
+            {% if user.settings and user.settings.notifications_enabled %}
+              <span class="badge badge-open">Включены</span>
+            {% else %}
+              <span class="badge badge-closed">Выключены</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      {% else %}
+        <tr>
+          <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">Пользователи пока не зарегистрированы</td>
+        </tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal Add User -->
+<div class="modal-backdrop" id="addUserModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Регистрация пользователя</h3>
+      <button class="close-btn" onclick="closeModal('addUserModal')">&times;</button>
+    </div>
+    <form onsubmit="handleCreateUser(event)">
+      <div class="form-group">
+        <label class="form-label">Discord ID</label>
+        <input type="text" id="userDiscordId" class="form-control" placeholder="например 987654321012345678" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Имя пользователя (Username)</label>
+        <input type="text" id="username" class="form-control" placeholder="например Artem" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email (опционально)</label>
+        <input type="email" id="userEmail" class="form-control" placeholder="user@example.com">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+        <button type="button" class="btn" style="background: rgba(255,255,255,0.05);" onclick="closeModal('addUserModal')">Отмена</button>
+        <button type="submit" class="btn btn-primary">Зарегистрировать</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
