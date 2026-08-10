@@ -11,6 +11,7 @@ class GuildSettings(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     guild_id: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     
     theme: Mapped[str] = mapped_column(String(20), default="dark", nullable=False)
     language: Mapped[str] = mapped_column(String(10), default="ru", nullable=False)

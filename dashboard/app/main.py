@@ -9,7 +9,7 @@ if str(dashboard_root) not in sys.path:
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from app.config import settings
-from app.routers import web_router, auth
+from app.routers import web_router, auth, api_router
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -26,6 +26,7 @@ app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
 # Include routers
 app.include_router(auth.router)
 app.include_router(web_router)
+app.include_router(api_router.router)
 
 
 

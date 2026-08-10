@@ -53,8 +53,7 @@ async def index_page(
     )
 
 
-def get_ticket_service(guild_id: str, db: AsyncSession) -> TicketService:
-    return TicketService(db, guild_id)
+from app.services.ticket_service import TicketService, get_ticket_service
 
 
 @router.get("/server/{guild_id}", response_class=HTMLResponse)
@@ -163,5 +162,40 @@ async def settings_page(
             "user": user,
             "guild_id": guild_id,
             "config": config
+        }
+    )
+
+
+from app.auth_deps import get_superadmin_user
+
+@router.get("/admin", response_class=HTMLResponse)
+async def admin_page(
+    request: Request,
+    user: User = Depends(get_superadmin_user),
+    db: AsyncSession = Depends(get_async_db)
+):
+    from sqlalchemy import select
+    from app.database.models.user import User
+    from app.database.models.guild_settings import GuildSettings
+    
+    # Get all users
+    users_stmt = select(User).order_by(User.id)
+    users_result = await db.execute(users_stmt)
+    all_users = users_result.scalars().all()
+    
+    # Get all servers
+    guilds_stmt = select(GuildSettings).order_by(GuildSettings.id)
+    guilds_result = await db.execute(guilds_stmt)
+    all_guilds = guilds_result.scalars().all()
+    
+    return templates.TemplateResponse(
+        request=request,
+        name="admin.html",
+        context={
+            "page_title": "Панель администратора",
+            "active_page": "admin",
+            "user": user,
+            "all_users": all_users,
+            "all_guilds": all_guilds
         }
     )

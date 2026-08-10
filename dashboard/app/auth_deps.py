@@ -30,10 +30,25 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
     result = await db.execute(stmt)
     user = result.scalar_one_or_none()
     
+    # Auto-promote to superadmin if in settings
+    if user and str(user.discord_id) in settings.SUPERADMIN_IDS:
+        if not user.is_admin:
+            user.is_admin = True
+            await db.commit()
+    
     # Мы можем временно сохранить access_token в объекте, если нам нужно делать запросы к Discord API
     if user:
         user.discord_access_token = payload.get("access_token")
         
+    return user
+
+
+async def get_superadmin_user(user: Optional[User] = Depends(get_current_user)) -> User:
+    """Требует прав супер-администратора."""
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+    if not user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized as superadmin")
     return user
 
 

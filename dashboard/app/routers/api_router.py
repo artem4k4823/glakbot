@@ -14,7 +14,7 @@ from app.schemas.ticket_schemas import (
     PanelConfigSchema,
     DashboardStats
 )
-from app.schemas.user_schemas import UserCreate, UserResponse, UserSettingsUpdate
+from app.schemas.user_schemas import UserCreate, UserResponse
 
 router = APIRouter(prefix="/api/v1", tags=["API Endpoints"])
 
@@ -23,7 +23,7 @@ router = APIRouter(prefix="/api/v1", tags=["API Endpoints"])
 
 @router.get("/stats", response_model=DashboardStats)
 async def get_stats(service: TicketService = Depends(get_ticket_service)):
-    return service.get_stats()
+    return await service.get_stats()
 
 
 # --- USERS & SETTINGS ---
@@ -40,24 +40,14 @@ async def create_user(user_in: UserCreate, db: AsyncSession = Depends(get_async_
     return await user_service.register_user(user_in)
 
 
-@router.patch("/users/{user_id}/settings")
-async def update_user_settings(
-    user_id: int,
-    settings_update: UserSettingsUpdate,
-    db: AsyncSession = Depends(get_async_db)
-):
-    user_service = UserService(db)
-    updated = await user_service.update_settings(user_id, settings_update)
-    if not updated:
-        raise HTTPException(status_code=404, detail="User settings not found")
-    return {"status": "success", "message": "Settings updated"}
+
 
 
 # --- CATEGORIES ---
 
 @router.get("/categories", response_model=List[CategorySchema])
 async def list_categories(service: TicketService = Depends(get_ticket_service)):
-    return service.list_categories()
+    return await service.list_categories()
 
 
 @router.post("/categories", response_model=CategorySchema, status_code=status.HTTP_201_CREATED)
@@ -65,7 +55,7 @@ async def create_category(
     category_in: CategoryCreate,
     service: TicketService = Depends(get_ticket_service)
 ):
-    return service.create_category(category_in)
+    return await service.create_category(category_in)
 
 
 @router.patch("/categories/{category_id}", response_model=CategorySchema)
@@ -98,7 +88,7 @@ async def list_tickets(
     status: str = None,
     service: TicketService = Depends(get_ticket_service)
 ):
-    return service.list_tickets(status=status)
+    return await service.list_tickets(status=status)
 
 
 @router.post("/tickets", response_model=TicketSchema, status_code=status.HTTP_201_CREATED)
@@ -106,7 +96,7 @@ async def register_ticket(
     ticket_in: TicketCreate,
     service: TicketService = Depends(get_ticket_service)
 ):
-    return service.register_ticket(ticket_in)
+    return await service.register_ticket(ticket_in)
 
 
 @router.patch("/tickets/{ticket_id}/status", response_model=TicketSchema)
@@ -125,7 +115,7 @@ async def update_ticket_status(
 
 @router.get("/config", response_model=PanelConfigSchema)
 async def get_panel_config(service: TicketService = Depends(get_ticket_service)):
-    return service.get_panel_config()
+    return await service.get_panel_config()
 
 
 @router.post("/config", response_model=PanelConfigSchema)
@@ -133,4 +123,51 @@ async def update_panel_config(
     config_in: PanelConfigSchema,
     service: TicketService = Depends(get_ticket_service)
 ):
-    return service.save_panel_config(config_in)
+    return await service.save_panel_config(config_in)
+
+
+# --- ADMIN ---
+from app.auth_deps import get_superadmin_user
+from sqlalchemy import select
+
+@router.post("/admin/users/{user_id}/toggle")
+async def toggle_user_ban(
+    user_id: int,
+    db: AsyncSession = Depends(get_async_db),
+    admin_user=Depends(get_superadmin_user)
+):
+    from app.database.models.user import User
+    
+    stmt = select(User).where(User.id == user_id)
+    res = await db.execute(stmt)
+    target_user = res.scalar_one_or_none()
+    
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    target_user.is_active = not target_user.is_active
+    await db.commit()
+    return {"status": "success", "is_active": target_user.is_active}
+
+
+@router.post("/admin/servers/{guild_id}/toggle")
+async def toggle_server_ban(
+    guild_id: str,
+    db: AsyncSession = Depends(get_async_db),
+    admin_user=Depends(get_superadmin_user)
+):
+    from app.database.models.guild_settings import GuildSettings
+    
+    stmt = select(GuildSettings).where(GuildSettings.guild_id == guild_id)
+    res = await db.execute(stmt)
+    server = res.scalar_one_or_none()
+    
+    if not server:
+        # If server settings don't exist yet, create them disabled
+        server = GuildSettings(guild_id=guild_id, is_active=False)
+        db.add(server)
+    else:
+        server.is_active = not server.is_active
+        
+    await db.commit()
+    return {"status": "success", "is_active": server.is_active}

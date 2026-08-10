@@ -1,5 +1,7 @@
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends
+from app.database.session import get_async_db
 from app.repositories.postgres_ticket_repository import PostgresTicketRepository
 from app.schemas.ticket_schemas import (
     CategorySchema,
@@ -69,3 +71,6 @@ class TicketService:
 
     async def save_panel_config(self, config_in: PanelConfigSchema) -> PanelConfigSchema:
         return await self.repository.update_panel_config(config_in)
+
+def get_ticket_service(guild_id: str, db: AsyncSession = Depends(get_async_db)) -> TicketService:
+    return TicketService(db, guild_id)

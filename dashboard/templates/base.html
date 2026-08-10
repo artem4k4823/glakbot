@@ -17,6 +17,7 @@
     </div>
 
     <ul class="nav-list">
+      {% if guild_id %}
       <li>
         <a href="/server/{{ guild_id }}" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">
           <i class="fa-solid fa-chart-pie"></i>
@@ -41,6 +42,15 @@
           <span>Настройки</span>
         </a>
       </li>
+      {% endif %}
+      {% if user and user.is_admin %}
+      <li>
+        <a href="/admin" class="nav-link {% if active_page == 'admin' %}active{% endif %}">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Панель админа</span>
+        </a>
+      </li>
+      {% endif %}
       <li style="margin-top: auto;">
         <a href="/" class="nav-link">
           <i class="fa-solid fa-arrow-left"></i>

@@ -28,6 +28,9 @@ class DashboardSettings(BaseSettings):
     DISCORD_CLIENT_SECRET: str = os.getenv("CLIENT_SECRET", "")
     DISCORD_REDIRECT_URI: str = os.getenv("REDIRECT_URI", "http://localhost:8000/auth/callback")
     BOT_TOKEN: str = os.getenv("BOT_TOKEN", "")
+    
+    # Comma-separated list of Discord IDs that have superadmin privileges
+    SUPERADMIN_IDS: list[str] = [id.strip() for id in os.getenv("SUPERADMIN_IDS", "").split(",") if id.strip()]
 
     model_config = SettingsConfigDict(
         env_prefix="DASHBOARD_",

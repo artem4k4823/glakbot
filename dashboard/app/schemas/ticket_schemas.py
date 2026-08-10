@@ -38,7 +38,7 @@ class TicketUpdateStatus(BaseModel):
 class TicketSchema(TicketCreate):
     id: str
     status: str = "open"
-    created_at: str
+    created_at: datetime
 
     class Config:
         from_attributes = True

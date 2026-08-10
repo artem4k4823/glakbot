@@ -55,6 +55,18 @@ class PanelConfigModel(Base):
     banner_url: Mapped[Optional[str]] = mapped_column(String(255))
     footer_text: Mapped[str] = mapped_column(String(100), default="Служба поддержки")
 
+class UserModel(Base):
+    __tablename__ = "users"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    discord_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    is_active: Mapped[bool] = mapped_column(default=True)
+
+class GuildSettingsModel(Base):
+    __tablename__ = "guild_settings"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    guild_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    is_active: Mapped[bool] = mapped_column(default=True)
+
 
 class TicketDashboardManager:
     """
@@ -155,3 +167,22 @@ class TicketDashboardManager:
             if ticket:
                 ticket.status = status
                 await db.commit()
+
+    async def check_ban(self, user_id: str, guild_id: str) -> bool:
+        """Проверяет, заблокирован ли пользователь или сервер. Возвращает True, если заблокирован."""
+        async with async_session() as db:
+            # Проверяем сервер
+            stmt_guild = select(GuildSettingsModel.is_active).where(GuildSettingsModel.guild_id == str(guild_id))
+            res_guild = await db.execute(stmt_guild)
+            guild_active = res_guild.scalar_one_or_none()
+            if guild_active is False:
+                return True
+                
+            # Проверяем пользователя
+            stmt_user = select(UserModel.is_active).where(UserModel.discord_id == str(user_id))
+            res_user = await db.execute(stmt_user)
+            user_active = res_user.scalar_one_or_none()
+            if user_active is False:
+                return True
+                
+        return False

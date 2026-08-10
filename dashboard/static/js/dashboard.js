@@ -50,7 +50,8 @@ async function handleCreateCategory(event) {
     const emoji = document.getElementById('categoryEmoji').value || '🎫';
 
     try {
-        const response = await fetch('/api/v1/categories', {
+        const guildId = window.location.pathname.split('/')[2];
+        const response = await fetch(`/api/v1/categories?guild_id=${guildId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -77,7 +78,8 @@ async function deleteCategory(categoryId) {
     }
 
     try {
-        const response = await fetch(`/api/v1/categories/${categoryId}`, {
+        const guildId = window.location.pathname.split('/')[2];
+        const response = await fetch(`/api/v1/categories/${categoryId}?guild_id=${guildId}`, {
             method: 'DELETE'
         });
 
@@ -102,7 +104,8 @@ async function handleSaveSettings(event) {
     const footer_text = document.getElementById('panelFooter').value;
 
     try {
-        const response = await fetch('/api/v1/config', {
+        const guildId = window.location.pathname.split('/')[2];
+        const response = await fetch(`/api/v1/config?guild_id=${guildId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

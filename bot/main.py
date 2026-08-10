@@ -13,33 +13,26 @@ async def on_ready():
 async def setup_ticket(ctx: discord.ApplicationContext):
     await send_ticket_panel(ctx)
 
+@bot.event
+async def on_interaction(interaction: discord.Interaction):
+    from app.dashboard_service.manager import TicketDashboardManager
+    db_manager = TicketDashboardManager()
+    
+    guild_id = str(interaction.guild_id) if interaction.guild_id else ""
+    user_id = str(interaction.user.id)
+    
+    is_banned = await db_manager.check_ban(user_id=user_id, guild_id=guild_id)
+    if is_banned:
+        try:
+            if not interaction.response.is_done():
+                await interaction.response.send_message("⛔ Вы или этот сервер заблокированы администратором бота.", ephemeral=True)
+        except Exception:
+            pass
+        return
+        
+    await bot.process_application_commands(interaction)
 
-class MyView(discord.ui.View):
-    @discord.ui.select( # the decorator that lets you specify the properties of the select menu
-        placeholder = "Choose a Flavor!", # the placeholder text that will be displayed if nothing is selected
-        min_values = 1, # the minimum number of values that must be selected by the users
-        max_values = 1, # the maximum number of values that can be selected by the users
-        options = [ # the list of options from which users can choose, a required field
-            discord.SelectOption(
-                label="Vanilla",
-                description="Pick this if you like vanilla!"
-            ),
-            discord.SelectOption(
-                label="Chocolate",
-                description="Pick this if you like chocolate!"
-            ),
-            discord.SelectOption(
-                label="Strawberry",
-                description="Pick this if you like strawberry!"
-            )
-        ]
-    )
-    async def select_callback(self, select, interaction): # the function called when the user is done selecting options
-        await interaction.response.send_message(f"Awesome! I like {select.values[0]} too!")
 
-@bot.slash_command(name = "sex2")
-async def flavor(ctx):
-    await ctx.respond("Choose a flavor!", view=MyView())
 
 
 if __name__ == "__main__":
