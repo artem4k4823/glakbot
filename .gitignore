@@ -39,3 +39,8 @@ local_settings.py
 # Logs
 *.log
 logs/
+
+# Deploy
+backups/
+**/.env
+.env.production

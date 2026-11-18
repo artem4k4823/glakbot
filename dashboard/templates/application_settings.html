@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 780px;">
+
+  <div class="notice notice-info">
+    <i class="fa-solid fa-circle-info"></i>
+    <div>
+      <strong>Как сделать, чтобы новичок видел только канал с анкетой</strong>
+      <ol style="margin: 0.5rem 0 0 1.2rem; line-height: 1.6;">
+        <li>Настройки сервера → Роли → <b>@everyone</b>: выключите «Просматривать каналы».</li>
+        <li>Роли, которую выдаёт анкета (выбирается ниже), включите «Просматривать каналы».</li>
+        <li>В канале анкеты разрешите <b>@everyone</b> «Просматривать канал» и запретите «Отправлять сообщения».</li>
+        <li>Роль бота должна стоять <b>выше</b> выдаваемой роли и иметь право «Управлять ролями».</li>
+        <li>В канале анкеты выполните команду <code>/setup_application</code> — бот отправит панель с кнопкой.</li>
+      </ol>
+    </div>
+  </div>
+
+  <form onsubmit="handleSaveApplicationSettings(event)">
+
+    <div class="card" style="margin-bottom: 1.5rem;">
+      <h2 class="section-title">Общие</h2>
+
+      <label class="custom-checkbox" style="margin-bottom: 1.25rem; display: inline-flex;">
+        <input type="checkbox" id="appEnabled" {% if config.enabled %}checked{% endif %}>
+        <span class="checkmark"></span>
+        <span class="role-name">Приём анкет открыт</span>
+      </label>
+
+      <div class="form-group">
+        <label class="form-label">Роль, которая выдаётся при одобрении</label>
+        <select id="appRole" class="form-control">
+          <option value="">— не выбрана —</option>
+          {% for role in roles %}
+          <option value="{{ role.id }}" {% if role.id == config.approved_role_id %}selected{% endif %}>{{ role.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Канал для уведомлений о новых анкетах (необязательно)</label>
+        <select id="appReviewChannel" class="form-control">
+          <option value="">— не отправлять —</option>
+          {% for ch in channels %}
+          <option value="{{ ch.id }}" {% if ch.id == config.review_channel_id %}selected{% endif %}># {{ ch.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 1.5rem;">
+      <h2 class="section-title">Панель в Discord</h2>
+
+      <div class="form-group">
+        <label class="form-label">Заголовок (он же заголовок окна анкеты, в окне обрежется до 45 символов)</label>
+        <input type="text" id="appTitle" class="form-control" value="{{ config.title }}" maxlength="255" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Описание</label>
+        <textarea id="appDesc" class="form-control" rows="3" maxlength="4000" required>{{ config.description }}</textarea>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label class="form-label">Текст кнопки</label>
+          <input type="text" id="appButton" class="form-control" value="{{ config.button_label }}" maxlength="80" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Цвет</label>
+          <input type="color" id="appColor" class="form-control" value="{{ config.color }}" style="height: 45px; padding: 0.2rem 0.5rem; cursor: pointer;">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">URL баннера (необязательно)</label>
+        <input type="url" id="appBanner" class="form-control" value="{{ config.banner_url or '' }}">
+      </div>
+      <small class="hint">После изменения внешнего вида заново выполните <code>/setup_application</code>. Вопросы применяются сразу.</small>
+    </div>
+
+    <div class="card" style="margin-bottom: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 class="section-title" style="margin: 0;">Вопросы <span class="hint">(максимум 5 — ограничение Discord)</span></h2>
+        <button type="button" class="btn btn-primary" id="addQuestionBtn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" onclick="addQuestion()">
+          <i class="fa-solid fa-plus"></i> Вопрос
+        </button>
+      </div>
+      <div id="questionsList"></div>
+    </div>
+
+    <div class="card" style="margin-bottom: 1.5rem;">
+      <h2 class="section-title">Сообщения пользователю в ЛС</h2>
+
+      <label class="custom-checkbox" style="margin-bottom: 1.25rem; display: inline-flex;">
+        <input type="checkbox" id="appDm" {% if config.dm_on_decision %}checked{% endif %}>
+        <span class="checkmark"></span>
+        <span class="role-name">Сообщать о решении в личные сообщения</span>
+      </label>
+
+      <div class="form-group">
+        <label class="form-label">При одобрении</label>
+        <textarea id="appApproveMsg" class="form-control" rows="2" maxlength="2000">{{ config.approve_message }}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">При отклонении</label>
+        <textarea id="appRejectMsg" class="form-control" rows="2" maxlength="2000">{{ config.reject_message }}</textarea>
+      </div>
+      <small class="hint">Подстановки: <code>{server}</code> — название сервера, <code>{user}</code> — упоминание пользователя, <code>{reason}</code> — причина отказа.</small>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 3rem;">
+      <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  window.APP_QUESTIONS = {{ questions_json | tojson }};
+</script>
+{% endblock %}

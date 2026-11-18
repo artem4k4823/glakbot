@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <h2 style="font-size: 1.25rem; font-weight: 600;">Анкеты участников</h2>
+  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+    {% for key, label in [('pending', 'На рассмотрении'), ('approved', 'Одобренные'), ('rejected', 'Отклонённые'), ('all', 'Все')] %}
+    <a href="/server/{{ guild_id }}/applications?status={{ key }}"
+       class="btn {% if current_status == key %}btn-primary{% endif %}"
+       style="padding: 0.4rem 0.8rem; font-size: 0.8rem; {% if current_status != key %}background: rgba(255,255,255,0.05); color: var(--text-secondary);{% endif %}">
+      {{ label }} <span class="count-pill">{{ counts[key] }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+{% if not role_configured %}
+<div class="notice notice-warning">
+  <i class="fa-solid fa-triangle-exclamation"></i>
+  Не выбрана роль, которая выдаётся при одобрении. Укажите её в
+  <a href="/server/{{ guild_id }}/application-settings">настройках анкеты</a>, иначе одобрить анкету не получится.
+</div>
+{% endif %}
+
+{% if applications %}
+<div class="app-list">
+  {% for app in applications %}
+  <div class="app-card" id="app-{{ app.id }}">
+    <div class="app-card-head">
+      <div class="app-user">
+        {% if app.user_avatar %}
+        <img src="{{ app.user_avatar }}" alt="" class="app-avatar">
+        {% else %}
+        <div class="app-avatar app-avatar-empty"><i class="fa-solid fa-user"></i></div>
+        {% endif %}
+        <div>
+          <div style="font-weight: 600;">{{ app.user_name }}</div>
+          <div class="app-meta">ID: {{ app.user_id }} · {{ app.created_at.strftime('%Y-%m-%d %H:%M') }} · <code>{{ app.id }}</code></div>
+        </div>
+      </div>
+      <div>
+        {% if app.status == 'pending' %}
+        <span class="badge badge-pending">На рассмотрении</span>
+        {% elif app.status == 'approved' %}
+        <span class="badge badge-open">Одобрена</span>
+        {% else %}
+        <span class="badge badge-closed">Отклонена</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <dl class="app-answers">
+      {% for item in app.answers %}
+      <dt>{{ item.question }}</dt>
+      <dd>{{ item.answer or '—' }}</dd>
+      {% endfor %}
+    </dl>
+
+    {% if app.status == 'pending' %}
+    <div class="app-actions">
+      <button class="btn btn-danger" onclick="openRejectModal('{{ app.id }}', {{ app.user_name | tojson | forceescape }})">
+        <i class="fa-solid fa-xmark"></i> Отклонить
+      </button>
+      <button class="btn btn-success" onclick="approveApplication('{{ app.id }}', this)">
+        <i class="fa-solid fa-check"></i> Одобрить и выдать роль
+      </button>
+    </div>
+    {% else %}
+    <div class="app-meta" style="margin-top: 1rem;">
+      {{ 'Одобрил' if app.status == 'approved' else 'Отклонил' }}: {{ app.reviewer_name or '—' }}
+      {% if app.reviewed_at %} · {{ app.reviewed_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}
+      {% if app.reject_reason %}<br>Причина: {{ app.reject_reason }}{% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card" style="text-align: center; color: var(--text-secondary); padding: 3rem;">
+  <i class="fa-regular fa-folder-open" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+  Анкет пока нет
+</div>
+{% endif %}
+
+<!-- Modal Reject -->
+<div class="modal-backdrop" id="rejectModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Отклонить анкету <span id="rejectUserName" style="color: var(--text-secondary);"></span></h3>
+      <button class="close-btn" onclick="closeModal('rejectModal')">&times;</button>
+    </div>
+    <form onsubmit="handleRejectApplication(event)">
+      <input type="hidden" id="rejectAppId">
+      <div class="form-group">
+        <label class="form-label">Причина (пользователь увидит её в ЛС)</label>
+        <textarea id="rejectReason" class="form-control" rows="3" maxlength="1000" placeholder="Например: слишком короткий рассказ о себе"></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+        <button type="button" class="btn" style="background: rgba(255,255,255,0.05); color: var(--text-secondary);" onclick="closeModal('rejectModal')">Отмена</button>
+        <button type="submit" class="btn btn-danger">Отклонить</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

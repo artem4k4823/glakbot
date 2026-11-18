@@ -1,0 +1,60 @@
+# Продакшен: docker compose -f docker-compose.prod.yml up -d --build
+# Все секреты берутся из файла .env рядом с этим файлом (шаблон — .env.production.example).
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Укажите POSTGRES_PASSWORD в .env}
+      POSTGRES_DB: snaphelp_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d snaphelp_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Порт наружу НЕ публикуется — база доступна только контейнерам
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:${POSTGRES_PASSWORD}@db:5432/snaphelp_db
+      DASHBOARD_SECRET_KEY: ${SECRET_KEY:?Укажите SECRET_KEY в .env}
+      CLIENT_ID: ${CLIENT_ID:?Укажите CLIENT_ID в .env}
+      CLIENT_SECRET: ${CLIENT_SECRET:?Укажите CLIENT_SECRET в .env}
+      REDIRECT_URI: https://${DOMAIN:-omnitracebot.ru}/auth/callback
+      BOT_TOKEN: ${BOT_TOKEN:?Укажите BOT_TOKEN в .env}
+      SUPERADMIN_IDS: ${SUPERADMIN_IDS:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000
+             --proxy-headers --forwarded-allow-ips='*'"
+    ports:
+      # Только localhost: снаружи панель доступна исключительно через nginx на хосте
+      - "127.0.0.1:8000:8000"
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    restart: unless-stopped
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+      DATABASE_URL: postgresql+asyncpg://postgres:${POSTGRES_PASSWORD}@db:5432/snaphelp_db
+    depends_on:
+      db:
+        condition: service_healthy
+      dashboard:
+        condition: service_started  # дашборд при старте применяет миграции
+
+volumes:
+  postgres_data:

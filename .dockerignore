@@ -1,0 +1,15 @@
+.git
+.gitignore
+.vscode
+.idea
+venv
+.venv
+**/__pycache__
+**/*.pyc
+.env
+.env.*
+**/.env
+dashboard/app/storage/data.json
+deploy
+docker-compose*.yml
+*.md

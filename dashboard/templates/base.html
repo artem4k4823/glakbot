@@ -42,6 +42,18 @@
           <span>Настройки</span>
         </a>
       </li>
+      <li>
+        <a href="/server/{{ guild_id }}/applications" class="nav-link {% if active_page == 'applications' %}active{% endif %}">
+          <i class="fa-solid fa-clipboard-list"></i>
+          <span>Анкеты</span>
+        </a>
+      </li>
+      <li>
+        <a href="/server/{{ guild_id }}/application-settings" class="nav-link {% if active_page == 'application_settings' %}active{% endif %}">
+          <i class="fa-solid fa-clipboard-question"></i>
+          <span>Настройки анкеты</span>
+        </a>
+      </li>
       {% endif %}
       {% if user and user.is_admin %}
       <li>

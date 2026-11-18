@@ -92,6 +92,32 @@ async def get_bot_guilds() -> set:
     return set()
 
 
+_user_admin_guilds_cache: Dict[str, tuple[float, set]] = {}
+
+
+async def _user_admin_guild_ids(user: User) -> set:
+    """ID серверов, где у пользователя есть права администратора (кеш 60 сек — Discord строго лимитирует /guilds)."""
+    cached = _user_admin_guilds_cache.get(user.discord_id)
+    if cached and time.time() - cached[0] < 60:
+        return cached[1]
+
+    ids = {
+        g["id"] for g in await get_user_guilds(user)
+        if g.get("owner") or int(g.get("permissions", 0)) & 0x8
+    }
+    _user_admin_guilds_cache[user.discord_id] = (time.time(), ids)
+    return ids
+
+
+async def require_guild_admin(guild_id: str, user: Optional[User] = Depends(get_current_user)) -> User:
+    """Пускает только админов указанного сервера (или суперадминов панели)."""
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+    if user.is_admin or guild_id in await _user_admin_guild_ids(user):
+        return user
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Нет прав администратора на этом сервере")
+
+
 async def get_admin_guilds(guilds: List[Dict]) -> List[Dict]:
     """Фильтрует список серверов и проверяет наличие бота."""
     admin_guilds = []

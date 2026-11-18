@@ -1,73 +1,43 @@
-import os
-import discord
+import uuid
 from typing import List, Dict, Any, Optional
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker, Mapped, mapped_column, declarative_base
-from sqlalchemy import select, String, Text
 
-from dotenv import load_dotenv
-from pathlib import Path
+import discord
+from sqlalchemy import select
 
-# Попробуем загрузить .env
-env_path = Path(__file__).resolve().parent.parent.parent.parent / ".env"
-load_dotenv(env_path)
-
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", 
-    "postgresql+asyncpg://postgres:postgrespassword@localhost:5437/snaphelp_db"
+from app.dashboard_service.core.database import async_session
+from app.dashboard_service.models import (
+    ApplicationConfigModel,
+    ApplicationModel,
+    CategoryModel,
+    GuildSettingsModel,
+    PanelConfigModel,
+    TicketModel,
+    UserModel,
 )
 
-# Создаем движок SQLAlchemy
-engine = create_async_engine(DATABASE_URL, echo=False)
-async_session = sessionmaker(
-    engine, class_=AsyncSession, expire_on_commit=False
-)
+DEFAULT_APPLICATION_QUESTIONS: List[Dict[str, Any]] = [
+    {"label": "Как к вам обращаться?", "placeholder": "Имя или ник", "style": "short",
+     "required": True, "min_length": 2, "max_length": 50},
+    {"label": "Сколько вам лет?", "placeholder": "Например: 18", "style": "short",
+     "required": True, "min_length": 1, "max_length": 3},
+    {"label": "Откуда вы узнали о сервере?", "placeholder": "Друг, реклама, поиск...", "style": "short",
+     "required": True, "min_length": 2, "max_length": 100},
+    {"label": "Расскажите немного о себе", "placeholder": "Чем увлекаетесь, зачем пришли на сервер...",
+     "style": "paragraph", "required": True, "min_length": 10, "max_length": 1000},
+]
 
-Base = declarative_base()
-
-class CategoryModel(Base):
-    __tablename__ = "categories"
-    id: Mapped[str] = mapped_column(String(32), primary_key=True)
-    guild_id: Mapped[str] = mapped_column(String(64), index=True)
-    label: Mapped[str] = mapped_column(String(50))
-    description: Mapped[str] = mapped_column(String(200))
-    emoji: Mapped[str] = mapped_column(String(10))
-
-class TicketModel(Base):
-    __tablename__ = "tickets"
-    id: Mapped[str] = mapped_column(String(32), primary_key=True)
-    guild_id: Mapped[str] = mapped_column(String(64), index=True)
-    channel_id: Mapped[str] = mapped_column(String(64))
-    user_name: Mapped[str] = mapped_column(String(100))
-    user_id: Mapped[str] = mapped_column(String(64))
-    category: Mapped[str] = mapped_column(String(50))
-    subject: Mapped[str] = mapped_column(String(100))
-    description: Mapped[str] = mapped_column(Text)
-    status: Mapped[str] = mapped_column(String(20))
-
-class PanelConfigModel(Base):
-    __tablename__ = "panel_configs"
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    guild_id: Mapped[str] = mapped_column(String(64), index=True)
-    title: Mapped[str] = mapped_column(String(100), default="🎫 Поддержка и обратная связь")
-    description: Mapped[str] = mapped_column(Text, default="Добро пожаловать в центр поддержки!")
-    color: Mapped[str] = mapped_column(String(20), default="#5865F2")
-    banner_url: Mapped[Optional[str]] = mapped_column(String(255))
-    footer_text: Mapped[str] = mapped_column(String(100), default="Служба поддержки")
-    admin_role_ids: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-
-class UserModel(Base):
-    __tablename__ = "users"
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    discord_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
-    is_active: Mapped[bool] = mapped_column(default=True)
-
-class GuildSettingsModel(Base):
-    __tablename__ = "guild_settings"
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    guild_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
-    is_active: Mapped[bool] = mapped_column(default=True)
-
+DEFAULT_APPLICATION_CONFIG: Dict[str, Any] = {
+    "enabled": True,
+    "title": "📋 Анкета для вступления",
+    "description": "Чтобы получить доступ к серверу, заполните короткую анкету. "
+                   "Администрация рассмотрит её и выдаст роль.",
+    "color": "#5865F2",
+    "banner_url": None,
+    "button_label": "Заполнить анкету",
+    "questions": DEFAULT_APPLICATION_QUESTIONS,
+    "approved_role_id": None,
+    "review_channel_id": None,
+}
 
 class TicketDashboardManager:
     """
@@ -137,7 +107,6 @@ class TicketDashboardManager:
         channel_id: str | None = None
     ) -> str:
         """Регистрирует новый тикет в PostgreSQL."""
-        import uuid
         ticket_id = f"t-{uuid.uuid4().hex[:8]}"
         
         async with async_session() as db:
@@ -186,5 +155,71 @@ class TicketDashboardManager:
             user_active = res_user.scalar_one_or_none()
             if user_active is False:
                 return True
-                
+
         return False
+
+    # --- APPLICATIONS (анкеты) ---
+
+    async def get_application_config(self, guild_id: str) -> Dict[str, Any]:
+        """Настройки анкеты сервера; если в панели ещё ничего не сохранено — значения по умолчанию."""
+        async with async_session() as db:
+            stmt = select(ApplicationConfigModel).where(ApplicationConfigModel.guild_id == str(guild_id))
+            config = (await db.execute(stmt)).scalar_one_or_none()
+
+        if not config:
+            return dict(DEFAULT_APPLICATION_CONFIG)
+
+        return {
+            "enabled": config.enabled,
+            "title": config.title,
+            "description": config.description,
+            "color": config.color,
+            "banner_url": config.banner_url,
+            "button_label": config.button_label,
+            "questions": config.questions or DEFAULT_APPLICATION_QUESTIONS,
+            "approved_role_id": config.approved_role_id,
+            "review_channel_id": config.review_channel_id,
+        }
+
+    async def get_latest_application(self, guild_id: str, user_id: str) -> Optional[ApplicationModel]:
+        """Последняя анкета пользователя на сервере (или None)."""
+        async with async_session() as db:
+            stmt = (
+                select(ApplicationModel)
+                .where(ApplicationModel.guild_id == str(guild_id), ApplicationModel.user_id == str(user_id))
+                .order_by(ApplicationModel.created_at.desc())
+                .limit(1)
+            )
+            return (await db.execute(stmt)).scalar_one_or_none()
+
+    async def register_application(
+        self,
+        guild_id: str,
+        user_id: str,
+        user_name: str,
+        user_avatar: str | None,
+        answers: List[Dict[str, str]],
+    ) -> str:
+        """Сохраняет новую анкету со статусом pending."""
+        application_id = f"a-{uuid.uuid4().hex[:8]}"
+        async with async_session() as db:
+            db.add(ApplicationModel(
+                id=application_id,
+                guild_id=str(guild_id),
+                user_id=str(user_id),
+                user_name=user_name,
+                user_avatar=user_avatar,
+                answers=answers,
+                status="pending",
+            ))
+            await db.commit()
+        return application_id
+
+    async def set_application_review_message(self, application_id: str, channel_id: str, message_id: str):
+        """Запоминает сообщение в канале модерации, чтобы веб-панель могла его обновить после решения."""
+        async with async_session() as db:
+            application = await db.get(ApplicationModel, application_id)
+            if application:
+                application.review_channel_id = str(channel_id)
+                application.review_message_id = str(message_id)
+                await db.commit()

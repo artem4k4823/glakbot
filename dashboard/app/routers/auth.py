@@ -92,8 +92,9 @@ async def callback(code: str, response: Response, db: AsyncSession = Depends(get
             key="session", 
             value=jwt_token, 
             httponly=True, 
-            max_age=7 * 24 * 3600, 
-            samesite="lax"
+            max_age=7 * 24 * 3600,
+            samesite="lax",
+            secure=settings.DISCORD_REDIRECT_URI.startswith("https://"),
         )
         return response
 

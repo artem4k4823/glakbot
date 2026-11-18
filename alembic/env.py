@@ -13,8 +13,14 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 
+# pyrefly: ignore [missing-import]
 from app.database.base import Base
-from app.database.models import User, GuildSettings, CategoryModel, TicketModel, PanelConfigModel
+# pyrefly: ignore [missing-import]
+from app.database.models import (  # noqa: F401 — импорт регистрирует модели в Base.metadata
+    User, GuildSettings, CategoryModel, TicketModel, PanelConfigModel,
+    ApplicationConfigModel, ApplicationModel,
+)
+# pyrefly: ignore [missing-import]
 from app.config import settings
 
 # this is the Alembic Config object, which provides
